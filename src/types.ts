@@ -1,0 +1,49 @@
+export type SymbolType =
+  | 'modak'
+  | 'diya'
+  | 'flower'
+  | 'durva'
+  | 'dhol'
+  | 'kalash'
+  | 'coconut'
+  | 'laddu'
+  | 'lotus'
+  | 'mushak'
+  | 'ganesh'
+  | 'pomegranate'
+  | 'mango'
+  | 'lamp';
+
+export interface SymbolDef {
+  id: SymbolType;
+  name: string;
+  hindiName?: string;
+  color: string;
+}
+
+export interface TileItem {
+  id: string; // unique instance id for animation & tracking
+  symbol: SymbolType;
+  index: number;
+  isRevealed: boolean;
+  isMatched: boolean;
+  isShaking: boolean;
+  isHighlightSwap: boolean;
+}
+
+export type GamePhase =
+  | 'idle'           // Before start
+  | 'memorize'       // Tiles are revealed (2s -> 1s)
+  | 'covering'       // Tiles flip back to hidden
+  | 'mushak_moving'  // Mushak sneaks in and swaps tile positions
+  | 'guessing'       // Player clicks tiles to match target
+  | 'round_success'  // Round solved, streak bonus & celebration
+  | 'game_over';     // Lives = 0
+
+export interface RoundConfig {
+  round: number;
+  tileCount: number;
+  revealDurationMs: number;
+  swapCount: number; // 1 or 2
+  targetSymbols: SymbolType[];
+}

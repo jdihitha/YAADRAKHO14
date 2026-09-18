@@ -1,0 +1,6 @@
+{
+  "name": "Judam",
+  "description": "A festive Ganesh Chaturthi memory game. Watch, remember, and find the festival cards while Mushak moves them around.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
