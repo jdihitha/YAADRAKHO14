@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { GaneshaHero, FestiveIcon } from './FestiveIcons';
+import { soundFx } from '../utils/audio';
 
 interface FestiveWishModalProps {
   onProceed: () => void;
@@ -23,6 +24,12 @@ export const FestiveWishModal: React.FC<FestiveWishModalProps> = ({ onProceed })
 
     return () => clearInterval(timer);
   }, [onProceed]);
+
+  const handleManualProceed = () => {
+    soundFx.unlockAudio();
+    soundFx.playButtonClick();
+    onProceed();
+  };
 
   return (
     <div
@@ -98,7 +105,7 @@ export const FestiveWishModal: React.FC<FestiveWishModalProps> = ({ onProceed })
 
         {/* Interactive Instant Start / Countdown */}
         <button
-          onClick={onProceed}
+          onClick={handleManualProceed}
           className="w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 hover:from-amber-600 hover:via-orange-600 hover:to-red-700 active:scale-95 text-white font-black text-base tracking-wider uppercase shadow-lg shadow-orange-500/30 border-2 border-amber-200 transition-all cursor-pointer flex items-center justify-center gap-2"
         >
           <span>LET'S PLAY!</span>

@@ -37,11 +37,15 @@ export const FestiveToranBanner: React.FC<FestiveToranBannerProps> = ({
             <button
               onClick={onToggleMute}
               id="toran-music-toggle-btn"
-              className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-300/40 text-[10px] sm:text-xs font-bold transition-all cursor-pointer shadow-xs"
-              title={isMuted ? 'Turn Sound On' : 'Turn Sound Off'}
+              className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[10px] sm:text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95 ${
+                isMuted
+                  ? 'bg-red-950/40 border-red-300/40 text-red-200 hover:bg-red-900/50'
+                  : 'bg-emerald-950/40 border-amber-300/60 text-amber-200 hover:bg-emerald-900/50'
+              }`}
+              title={isMuted ? 'Turn Sound On (Tap to hear eating & game sounds)' : 'Mute Sound'}
             >
-              {isMuted ? <VolumeX className="w-3 h-3 text-amber-300" /> : <Volume2 className="w-3 h-3 text-amber-300" />}
-              <span className="hidden xs:inline uppercase tracking-wider">MUSIC</span>
+              {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-300" /> : <Volume2 className="w-3.5 h-3.5 text-amber-300 animate-pulse" />}
+              <span className="uppercase tracking-wider">{isMuted ? 'SOUND OFF' : 'SOUND ON'}</span>
             </button>
           )}
 

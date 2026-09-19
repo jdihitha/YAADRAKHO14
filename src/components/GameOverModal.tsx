@@ -1,5 +1,6 @@
 import React from 'react';
 import { FestiveIcon } from './FestiveIcons';
+import { soundFx } from '../utils/audio';
 
 interface GameOverModalProps {
   score: number;
@@ -23,10 +24,20 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   const isNewBest = score > 0 && score >= bestScore;
 
   const handleAction = () => {
+    soundFx.unlockAudio();
+    soundFx.playButtonClick();
     if (onPlayAgain) {
       onPlayAgain();
     } else if (onRestart) {
       onRestart();
+    }
+  };
+
+  const handleHomeClick = () => {
+    soundFx.unlockAudio();
+    soundFx.playButtonClick();
+    if (onHome) {
+      onHome();
     }
   };
 
@@ -110,7 +121,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         {onHome && (
           <button
             type="button"
-            onClick={onHome}
+            onClick={handleHomeClick}
             className="mt-3 text-xs font-bold text-amber-900/80 hover:text-amber-950 underline underline-offset-4 cursor-pointer py-1"
           >
             ← Back to Home

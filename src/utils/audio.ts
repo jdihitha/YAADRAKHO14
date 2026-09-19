@@ -1,30 +1,61 @@
-// Web Audio API generator for zero-latency, offline festive sound effects
+// Web Audio API generator for zero-latency, rich interactive festive sound effects
 
 class AudioManager {
   private ctx: AudioContext | null = null;
   private isMuted: boolean = false;
+  private isUnlocked: boolean = false;
 
   constructor() {
     // Read saved preference
-    const saved = localStorage.getItem('judam_muted') || localStorage.getItem('modak_memory_muted');
+    const saved = localStorage.getItem('yaadrakho_muted') || localStorage.getItem('judam_muted');
     if (saved !== null) {
       this.isMuted = saved === 'true';
     }
+
+    // Bind auto-unlock to the first user gesture anywhere on window/document
+    if (typeof window !== 'undefined') {
+      const unlockHandler = () => {
+        this.unlockAudio();
+        ['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach((ev) => {
+          window.removeEventListener(ev, unlockHandler);
+        });
+      };
+      ['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach((ev) => {
+        window.addEventListener(ev, unlockHandler, { passive: true, once: true });
+      });
+    }
   }
 
-  private initCtx() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioCtx();
+  // Public method to explicitly unlock and prime audio context on user interaction
+  public unlockAudio() {
+    this.initCtx();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    this.isUnlocked = true;
+  }
+
+  public initCtx() {
+    if (!this.ctx && typeof window !== 'undefined') {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (AudioCtx) {
+        this.ctx = new AudioCtx();
+      }
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
   }
 
   public toggleMute(): boolean {
     this.isMuted = !this.isMuted;
-    localStorage.setItem('judam_muted', String(this.isMuted));
+    localStorage.setItem('yaadrakho_muted', String(this.isMuted));
+    if (!this.isMuted) {
+      this.unlockAudio();
+      this.playButtonClick();
+    }
     return this.isMuted;
   }
 
@@ -32,158 +63,501 @@ class AudioManager {
     return this.isMuted;
   }
 
-  // Bell chime when tiles are revealed
+  // Helper: Create a quick filtered noise burst (crunch, rustle, snap)
+  private playNoiseBurst(
+    startTime: number,
+    durationSec: number,
+    filterFreq: number,
+    volume: number = 0.1,
+    filterType: BiquadFilterType = 'bandpass'
+  ) {
+    if (!this.ctx) return;
+    try {
+      const sampleRate = this.ctx.sampleRate;
+      const bufferSize = Math.max(128, Math.floor(sampleRate * durationSec));
+      const buffer = this.ctx.createBuffer(1, bufferSize, sampleRate);
+      const data = buffer.getChannelData(0);
+
+      // Generate soft pink/white noise
+      let lastOut = 0.0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        // Simple 1-pole filter for pink-like texture
+        data[i] = (lastOut + 0.02 * white) / 1.02;
+        lastOut = data[i];
+      }
+
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = buffer;
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = filterType;
+      filter.frequency.setValueAtTime(filterFreq, startTime);
+      filter.Q.value = 2.0;
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(volume, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + durationSec);
+
+      noiseSource.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      noiseSource.start(startTime);
+      noiseSource.stop(startTime + durationSec);
+    } catch {
+      // ignore
+    }
+  }
+
+  // ================= 1. GANESHA EATING SOUNDS (ORGANIC, DELICIOUS & ADORABLE) =================
+
+  /**
+   * Play specific bite munch sound:
+   * - biteNum 1: Crispy, savory first bite into golden sweet modak ("CHOMP!")
+   * - biteNum 2: Delicious, chewy mastication ("NOM-NOM!")
+   * - biteNum 3: Sweet final gulp into tummy ("GULP/NOM!")
+   */
+  public playBiteChomp(biteNum: 1 | 2 | 3 = 1) {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      if (biteNum === 1) {
+        // --- BITE 1: Crisp Sweet Modak Chomp ---
+        // 1. Crisp crumb crunch (bandpassed noise)
+        this.playNoiseBurst(t, 0.045, 2200, 0.18, 'bandpass');
+
+        // 2. Warm mouth chomp body (sine downward transient)
+        const mouthOsc = ctx.createOscillator();
+        const mouthGain = ctx.createGain();
+        mouthOsc.type = 'sine';
+        mouthOsc.frequency.setValueAtTime(220, t);
+        mouthOsc.frequency.exponentialRampToValueAtTime(80, t + 0.07);
+
+        mouthGain.gain.setValueAtTime(0.22, t);
+        mouthGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+
+        mouthOsc.connect(mouthGain);
+        mouthGain.connect(ctx.destination);
+        mouthOsc.start(t);
+        mouthOsc.stop(t + 0.085);
+
+        // 3. Playful lip pop (formant resonance)
+        const popOsc = ctx.createOscillator();
+        const popGain = ctx.createGain();
+        popOsc.type = 'triangle';
+        popOsc.frequency.setValueAtTime(420, t);
+        popOsc.frequency.exponentialRampToValueAtTime(220, t + 0.035);
+
+        popGain.gain.setValueAtTime(0.12, t);
+        popGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+
+        popOsc.connect(popGain);
+        popGain.connect(ctx.destination);
+        popOsc.start(t);
+        popOsc.stop(t + 0.045);
+      } else if (biteNum === 2) {
+        // --- BITE 2: Yummy Chewy Double-Munch ("Nom-Nom!") ---
+        const munches = [0, 0.08];
+        munches.forEach((dt, idx) => {
+          this.playNoiseBurst(t + dt, 0.035, 1800 + idx * 200, 0.14, 'bandpass');
+
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(180 + idx * 30, t + dt);
+          osc.frequency.exponentialRampToValueAtTime(95, t + dt + 0.055);
+
+          gain.gain.setValueAtTime(0.18, t + dt);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.06);
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(t + dt);
+          osc.stop(t + dt + 0.065);
+        });
+      } else {
+        // --- BITE 3: Satisfying Sweet Gulp / Ingestion ---
+        this.playNoiseBurst(t, 0.03, 1600, 0.12, 'bandpass');
+
+        const gulpOsc = ctx.createOscillator();
+        const gulpGain = ctx.createGain();
+        gulpOsc.type = 'sine';
+        gulpOsc.frequency.setValueAtTime(190, t);
+        gulpOsc.frequency.exponentialRampToValueAtTime(110, t + 0.05);
+        gulpOsc.frequency.linearRampToValueAtTime(140, t + 0.09);
+
+        gulpGain.gain.setValueAtTime(0.24, t);
+        gulpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+
+        gulpOsc.connect(gulpGain);
+        gulpGain.connect(ctx.destination);
+        gulpOsc.start(t);
+        gulpOsc.stop(t + 0.11);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Alias for backward compatibility
+  public playEatingSound() {
+    this.playBiteChomp(1);
+  }
+
+  /**
+   * Divine satisfaction tone when Ganesha finishes eating:
+   * Adorable warm "Mmm!" harmonic resonance + twin sparkling celestial temple chimes
+   */
+  public playYumBlessing() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      // 1. Warm satisfied "Mmm!" vocal hum
+      const humFreqs = [440, 554.37]; // A4, C#5 warm sweet chord
+      humFreqs.forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        osc.frequency.linearRampToValueAtTime(freq * 1.03, t + 0.15);
+        osc.frequency.linearRampToValueAtTime(freq, t + 0.35);
+
+        gain.gain.setValueAtTime(0.01, t);
+        gain.gain.linearRampToValueAtTime(0.12, t + 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.45);
+      });
+
+      // 2. Divine golden bell chimes (C6 & G6)
+      const bells = [
+        { f: 1046.5, delay: 0.12 },
+        { f: 1567.98, delay: 0.22 },
+      ];
+      bells.forEach((bell) => {
+        const bOsc = ctx.createOscillator();
+        const bGain = ctx.createGain();
+        bOsc.type = 'sine';
+        bOsc.frequency.setValueAtTime(bell.f, t + bell.delay);
+
+        bGain.gain.setValueAtTime(0.001, t + bell.delay);
+        bGain.gain.linearRampToValueAtTime(0.15, t + bell.delay + 0.02);
+        bGain.gain.exponentialRampToValueAtTime(0.001, t + bell.delay + 0.6);
+
+        bOsc.connect(bGain);
+        bGain.connect(ctx.destination);
+        bOsc.start(t + bell.delay);
+        bOsc.stop(t + bell.delay + 0.65);
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // Quick sound when player taps to manually feed Ganesha
+  public playFeedGanesha() {
+    this.playBiteChomp(1);
+    setTimeout(() => {
+      this.playYumBlessing();
+    }, 280);
+  }
+
+  // ================= 2. INTERACTIVE GAMEPLAY SOUNDS =================
+
+  // Crisp, snappy UI button tap / toggle pop
+  public playButtonClick() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(540, t);
+      osc.frequency.exponentialRampToValueAtTime(260, t + 0.04);
+
+      gain.gain.setValueAtTime(0.16, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.05);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Resonant auspicious temple bell / gong chime when starting a game
+  public playStartGame() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      const notes = [
+        { f: 392.0, d: 0.8 }, // G4
+        { f: 587.33, d: 0.7 }, // D5
+        { f: 783.99, d: 0.9 }, // G5
+        { f: 1174.66, d: 1.1 }, // D6
+      ];
+
+      notes.forEach((note, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(note.f, t + idx * 0.06);
+
+        gain.gain.setValueAtTime(0.001, t + idx * 0.06);
+        gain.gain.linearRampToValueAtTime(0.18, t + idx * 0.06 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.06 + note.d);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t + idx * 0.06);
+        osc.stop(t + idx * 0.06 + note.d + 0.05);
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  // Tactile card flip sound
+  public playFlip() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      // Soft paper/wood friction noise
+      this.playNoiseBurst(t, 0.035, 1400, 0.12, 'bandpass');
+
+      // Low wooden snap click
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, t);
+      osc.frequency.exponentialRampToValueAtTime(120, t + 0.05);
+
+      gain.gain.setValueAtTime(0.16, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.055);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.06);
+    } catch {
+      // ignore
+    }
+  }
+
+  public playTileClick() {
+    this.playFlip();
+  }
+
+  // Bell chime when cards are revealed at start of round
   public playReveal() {
     if (this.isMuted) return;
     try {
       this.initCtx();
       if (!this.ctx) return;
-      const t = this.ctx.currentTime;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
       const notes = [587.33, 739.99, 880.0]; // D5, F#5, A5 festive harmony
       notes.forEach((freq, idx) => {
-        const osc = this.ctx!.createOscillator();
-        const gain = this.ctx!.createGain();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, t + idx * 0.08);
-        gain.gain.setValueAtTime(0, t + idx * 0.08);
-        gain.gain.linearRampToValueAtTime(0.12, t + idx * 0.08 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.08 + 0.6);
+        osc.frequency.setValueAtTime(freq, t + idx * 0.07);
+        gain.gain.setValueAtTime(0, t + idx * 0.07);
+        gain.gain.linearRampToValueAtTime(0.14, t + idx * 0.07 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.07 + 0.55);
 
         osc.connect(gain);
-        gain.connect(this.ctx!.destination);
-        osc.start(t + idx * 0.08);
-        osc.stop(t + idx * 0.08 + 0.65);
+        gain.connect(ctx.destination);
+        osc.start(t + idx * 0.07);
+        osc.stop(t + idx * 0.07 + 0.6);
       });
     } catch {
       // ignore
     }
   }
 
-  // Playful scurry sound when Mushak secretly moves tiles
+  public playChime() {
+    this.playReveal();
+  }
+
+  // Playful, cute mouse scurry footsteps + little squeak when Mushak moves
   public playMushakScurry() {
     if (this.isMuted) return;
     try {
       this.initCtx();
       if (!this.ctx) return;
-      const t = this.ctx.currentTime;
-      
-      // Little sneaky scurry chirp
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(800, t);
-      osc.frequency.exponentialRampToValueAtTime(1400, t + 0.12);
-      osc.frequency.exponentialRampToValueAtTime(950, t + 0.25);
-      osc.frequency.exponentialRampToValueAtTime(1600, t + 0.4);
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
 
-      gain.gain.setValueAtTime(0.01, t);
-      gain.gain.linearRampToValueAtTime(0.15, t + 0.08);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      // 1. Cute cartoon mouse squeak
+      const squeak = ctx.createOscillator();
+      const squeakGain = ctx.createGain();
+      squeak.type = 'sine';
+      squeak.frequency.setValueAtTime(1400, t);
+      squeak.frequency.exponentialRampToValueAtTime(2200, t + 0.09);
+      squeak.frequency.exponentialRampToValueAtTime(1600, t + 0.18);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(t);
-      osc.stop(t + 0.52);
-    } catch {
-      // ignore
-    }
-  }
+      squeakGain.gain.setValueAtTime(0.01, t);
+      squeakGain.gain.linearRampToValueAtTime(0.12, t + 0.04);
+      squeakGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
 
-  // Tile flip tap
-  public playTileClick() {
-    if (this.isMuted) return;
-    try {
-      this.initCtx();
-      if (!this.ctx) return;
-      const t = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, t);
-      osc.frequency.exponentialRampToValueAtTime(220, t + 0.06);
+      squeak.connect(squeakGain);
+      squeakGain.connect(ctx.destination);
+      squeak.start(t);
+      squeak.stop(t + 0.24);
 
-      gain.gain.setValueAtTime(0.15, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(t);
-      osc.stop(t + 0.08);
-    } catch {
-      // ignore
-    }
-  }
-
-  // Correct selection chime
-  public playCorrect() {
-    if (this.isMuted) return;
-    try {
-      this.initCtx();
-      if (!this.ctx) return;
-      const t = this.ctx.currentTime;
-      const chord = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
-      chord.forEach((freq, idx) => {
-        const osc = this.ctx!.createOscillator();
-        const gain = this.ctx!.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, t + idx * 0.05);
-
-        gain.gain.setValueAtTime(0, t + idx * 0.05);
-        gain.gain.linearRampToValueAtTime(0.14, t + idx * 0.05 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.05 + 0.4);
-
-        osc.connect(gain);
-        gain.connect(this.ctx!.destination);
-        osc.start(t + idx * 0.05);
-        osc.stop(t + idx * 0.05 + 0.45);
+      // 2. Rapid little footsteps patter
+      const footstepDelays = [0.04, 0.1, 0.16, 0.22, 0.28];
+      footstepDelays.forEach((dt, idx) => {
+        this.playNoiseBurst(t + dt, 0.025, 2400 + (idx % 2) * 400, 0.08, 'bandpass');
       });
     } catch {
       // ignore
     }
   }
 
-  // Wrong selection buzz/thud
-  public playWrong() {
+  // Card swap whoosh sound
+  public playSwapSwoosh() {
     if (this.isMuted) return;
     try {
       this.initCtx();
       if (!this.ctx) return;
-      const t = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(140, t);
-      osc.frequency.linearRampToValueAtTime(90, t + 0.25);
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
 
-      gain.gain.setValueAtTime(0.2, t);
-      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, t);
+      osc.frequency.exponentialRampToValueAtTime(750, t + 0.12);
+      osc.frequency.exponentialRampToValueAtTime(400, t + 0.22);
+
+      gain.gain.setValueAtTime(0.01, t);
+      gain.gain.linearRampToValueAtTime(0.14, t + 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(ctx.destination);
       osc.start(t);
-      osc.stop(t + 0.3);
+      osc.stop(t + 0.25);
     } catch {
       // ignore
     }
   }
 
-  // Round clear celebration
+  // Correct selection chime (ascending temple chime chord)
+  public playCorrect() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      // Joyful 4-note ascending temple harmony
+      const chord = [659.25, 830.61, 987.77, 1318.51]; // E5, G#5, B5, E6
+      chord.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, t + idx * 0.045);
+
+        gain.gain.setValueAtTime(0, t + idx * 0.045);
+        gain.gain.linearRampToValueAtTime(0.16, t + idx * 0.045 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.045 + 0.45);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t + idx * 0.045);
+        osc.stop(t + idx * 0.045 + 0.48);
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  public playMatchSuccess() {
+    this.playCorrect();
+  }
+
+  // Wrong selection: gentle, friendly wooden thud with mild wobble (never annoying)
+  public playWrong() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      // Wooden thud
+      this.playNoiseBurst(t, 0.06, 350, 0.15, 'lowpass');
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(160, t);
+      osc.frequency.linearRampToValueAtTime(95, t + 0.16);
+
+      gain.gain.setValueAtTime(0.2, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    } catch {
+      // ignore
+    }
+  }
+
+  public playWrongError() {
+    this.playWrong();
+  }
+
+  // Round clear celebration fanfare
   public playRoundWin() {
     if (this.isMuted) return;
     try {
       this.initCtx();
       if (!this.ctx) return;
-      const t = this.ctx.currentTime;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
       const fanfare = [
-        { f: 523.25, d: 0.1 },
-        { f: 659.25, d: 0.1 },
-        { f: 783.99, d: 0.1 },
-        { f: 1046.5, d: 0.35 },
+        { f: 523.25, d: 0.11 }, // C5
+        { f: 659.25, d: 0.11 }, // E5
+        { f: 783.99, d: 0.11 }, // G5
+        { f: 1046.5, d: 0.42 }, // C6
       ];
       let offset = 0;
       fanfare.forEach((note) => {
-        const osc = this.ctx!.createOscillator();
-        const gain = this.ctx!.createGain();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(note.f, t + offset);
 
@@ -192,7 +566,7 @@ class AudioManager {
         gain.gain.exponentialRampToValueAtTime(0.001, t + offset + note.d);
 
         osc.connect(gain);
-        gain.connect(this.ctx!.destination);
+        gain.connect(ctx.destination);
         osc.start(t + offset);
         osc.stop(t + offset + note.d + 0.05);
         offset += 0.11;
@@ -202,57 +576,12 @@ class AudioManager {
     }
   }
 
-  // Convenient aliases
-  public playChime() {
-    this.playReveal();
-  }
-
-  public playFlip() {
-    this.playTileClick();
-  }
-
-  public playMatchSuccess() {
-    this.playCorrect();
-  }
-
   public playRoundClear() {
     this.playRoundWin();
   }
 
-  public playWrongError() {
-    this.playWrong();
-  }
-
-  // Game over
-  public playGameOver() {
-    if (this.isMuted) return;
-    try {
-      this.initCtx();
-      if (!this.ctx) return;
-      const t = this.ctx.currentTime;
-      const tones = [440, 392, 349.23, 293.66];
-      tones.forEach((freq, idx) => {
-        const osc = this.ctx!.createOscillator();
-        const gain = this.ctx!.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, t + idx * 0.15);
-
-        gain.gain.setValueAtTime(0, t + idx * 0.15);
-        gain.gain.linearRampToValueAtTime(0.15, t + idx * 0.15 + 0.03);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.15 + 0.4);
-
-        osc.connect(gain);
-        gain.connect(this.ctx!.destination);
-        osc.start(t + idx * 0.15);
-        osc.stop(t + idx * 0.15 + 0.45);
-      });
-    } catch {
-      // ignore
-    }
-  }
-
-  // Vinayaka eating Modak & Undrallu sound effect (crisp festive munching & joyful chime)
-  public playEatingSound() {
+  // Grand victory fanfare when completing all 3 levels!
+  public playGrandVictory() {
     if (this.isMuted) return;
     try {
       this.initCtx();
@@ -260,70 +589,61 @@ class AudioManager {
       const ctx = this.ctx;
       const t = ctx.currentTime;
 
-      // Munch / Crunch Bite 1 & 2
-      const biteTimes = [0, 0.14, 0.28];
-      biteTimes.forEach((biteTime, idx) => {
-        // Crunch pitch transient
+      // Royal victory temple fanfare notes
+      const notes = [
+        { f: 523.25, delay: 0.0, d: 0.18 }, // C5
+        { f: 659.25, delay: 0.14, d: 0.18 }, // E5
+        { f: 783.99, delay: 0.28, d: 0.2 }, // G5
+        { f: 1046.5, delay: 0.42, d: 0.45 }, // C6
+        { f: 880.0, delay: 0.62, d: 0.2 }, // A5
+        { f: 1046.5, delay: 0.78, d: 0.2 }, // C6
+        { f: 1318.51, delay: 0.96, d: 0.8 }, // E6
+      ];
+
+      notes.forEach((item) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = idx % 2 === 0 ? 'triangle' : 'square';
-        const startFreq = 380 - idx * 30;
-        const endFreq = 160 - idx * 20;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(item.f, t + item.delay);
 
-        osc.frequency.setValueAtTime(startFreq, t + biteTime);
-        osc.frequency.exponentialRampToValueAtTime(Math.max(60, endFreq), t + biteTime + 0.08);
-
-        gain.gain.setValueAtTime(0.01, t + biteTime);
-        gain.gain.linearRampToValueAtTime(0.18, t + biteTime + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + biteTime + 0.09);
-
-        // White noise-like crunch buffer for texture
-        const bufferSize = Math.floor(ctx.sampleRate * 0.04);
-        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 2 - 1;
-        }
-
-        const whiteNoise = ctx.createBufferSource();
-        whiteNoise.buffer = noiseBuffer;
-
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 1200 + idx * 200;
-        filter.Q.value = 2;
-
-        const noiseGain = ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.15, t + biteTime);
-        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + biteTime + 0.04);
-
-        whiteNoise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(ctx.destination);
-
-        whiteNoise.start(t + biteTime);
+        gain.gain.setValueAtTime(0.001, t + item.delay);
+        gain.gain.linearRampToValueAtTime(0.2, t + item.delay + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + item.delay + item.d);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.start(t + biteTime);
-        osc.stop(t + biteTime + 0.1);
+        osc.start(t + item.delay);
+        osc.stop(t + item.delay + item.d + 0.05);
       });
+    } catch {
+      // ignore
+    }
+  }
 
-      // Joyful sweet divine chime after eating (satisfaction ding)
-      const chimeOsc = ctx.createOscillator();
-      const chimeGain = ctx.createGain();
-      chimeOsc.type = 'sine';
-      chimeOsc.frequency.setValueAtTime(880, t + 0.36); // A5
-      chimeOsc.frequency.exponentialRampToValueAtTime(1318.51, t + 0.44); // E6
+  // Game over gentle descending cadence
+  public playGameOver() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+      const tones = [440, 392, 349.23, 293.66];
+      tones.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + idx * 0.15);
 
-      chimeGain.gain.setValueAtTime(0.001, t + 0.36);
-      chimeGain.gain.linearRampToValueAtTime(0.14, t + 0.39);
-      chimeGain.gain.exponentialRampToValueAtTime(0.001, t + 0.72);
+        gain.gain.setValueAtTime(0, t + idx * 0.15);
+        gain.gain.linearRampToValueAtTime(0.14, t + idx * 0.15 + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.15 + 0.45);
 
-      chimeOsc.connect(chimeGain);
-      chimeGain.connect(ctx.destination);
-      chimeOsc.start(t + 0.36);
-      chimeOsc.stop(t + 0.75);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t + idx * 0.15);
+        osc.stop(t + idx * 0.15 + 0.5);
+      });
     } catch {
       // ignore
     }

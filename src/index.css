@@ -33,3 +33,83 @@
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-4px); }
 }
+
+@keyframes ganeshaBreathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.13;
+  }
+  50% {
+    transform: scale(1.025);
+    opacity: 0.20;
+  }
+}
+
+@keyframes ganeshaFloatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(4deg);
+  }
+}
+
+@keyframes durvaSway {
+  0%, 100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@keyframes flowerDrift {
+  0%, 100% {
+    transform: translateY(0px) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(6deg);
+  }
+}
+
+@keyframes flameFlicker {
+  0%, 100% {
+    transform: scale(1) scaleY(1);
+    opacity: 0.92;
+  }
+  25% {
+    transform: scale(1.05) scaleY(1.08) skewX(1.5deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.96) scaleY(0.95) skewX(-1.5deg);
+    opacity: 0.88;
+  }
+  75% {
+    transform: scale(1.04) scaleY(1.04) skewX(0.5deg);
+    opacity: 0.97;
+  }
+}
+
+@keyframes mushakWiggle {
+  0%, 86%, 94%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  88% {
+    transform: translateY(-2px) scale(1.03);
+  }
+  92% {
+    transform: translateY(-1px) scale(1.01);
+  }
+}
+
+@keyframes sparklePulse {
+  0%, 100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}

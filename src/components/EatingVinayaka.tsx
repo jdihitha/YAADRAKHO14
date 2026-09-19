@@ -37,30 +37,31 @@ export const EatingVinayaka: React.FC<EatingVinayakaProps> = ({ onEat, className
           timer = window.setTimeout(() => {
             if (!isMounted) return;
 
-            // Stage 3: First bite - active chewing mouth, munch sound, sparkles! (700ms)
+            // Stage 3: First bite - active chewing mouth, crisp chomp sound, sparkles! (700ms)
             setStage('chew1');
-            soundFx.playEatingSound();
+            soundFx.playBiteChomp(1);
             if (onEat) onEat(nextFood);
 
             timer = window.setTimeout(() => {
               if (!isMounted) return;
 
-              // Stage 4: Second bite - active chewing mouth! (700ms)
+              // Stage 4: Second bite - chewy nom-nom munch! (700ms)
               setStage('chew2');
-              soundFx.playEatingSound();
+              soundFx.playBiteChomp(2);
 
               timer = window.setTimeout(() => {
                 if (!isMounted) return;
 
-                // Stage 5: Final bite into mouth! (700ms)
+                // Stage 5: Final bite - sweet swallow into tummy! (700ms)
                 setStage('chew3');
-                soundFx.playEatingSound();
+                soundFx.playBiteChomp(3);
 
                 timer = window.setTimeout(() => {
                   if (!isMounted) return;
 
-                  // Stage 6: Satisfied & blissful smile with blessing! (1700ms)
+                  // Stage 6: Satisfied & blissful smile with divine blessing & chime! (1700ms)
                   setStage('satisfied');
+                  soundFx.playYumBlessing();
                   const blessings = [
                     nextFood === 'modak' ? 'Delicious Modak! 🥟✨' : 'Sweet Undrallu! ⚪✨',
                     'Om Ganapataye Namaha! 🌸',
@@ -100,6 +101,48 @@ export const EatingVinayaka: React.FC<EatingVinayakaProps> = ({ onEat, className
   const isLifting = stage === 'lifting';
   const isReaching = stage === 'reaching';
   const isSatisfied = stage === 'satisfied';
+
+  // Manual interactive tap to feed Vinayaka
+  const handleManualFeed = () => {
+    soundFx.unlockAudio();
+    if (stage === 'idle' || stage === 'satisfied') {
+      const nextFood: 'modak' | 'undralu' = currentFood === 'modak' ? 'undralu' : 'modak';
+      setCurrentFood(nextFood);
+      setStage('reaching');
+      setTimeout(() => {
+        setStage('lifting');
+        setTimeout(() => {
+          setStage('chew1');
+          soundFx.playBiteChomp(1);
+          setTimeout(() => {
+            setStage('chew2');
+            soundFx.playBiteChomp(2);
+            setTimeout(() => {
+              setStage('chew3');
+              soundFx.playBiteChomp(3);
+              setTimeout(() => {
+                setStage('satisfied');
+                soundFx.playYumBlessing();
+                const blessings = [
+                  nextFood === 'modak' ? 'Delicious Modak! 🥟✨' : 'Sweet Undrallu! ⚪✨',
+                  'Om Ganapataye Namaha! 🌸',
+                  'Vinayaka Blesses You! 🪔',
+                ];
+                setBlessingText(blessings[Math.floor(Math.random() * blessings.length)]);
+                setTimeout(() => {
+                  setStage('idle');
+                  setBlessingText(null);
+                }, 1700);
+              }, 600);
+            }, 600);
+          }, 600);
+        }, 600);
+      }, 500);
+    } else {
+      // If currently mid-chew, play immediate extra tasty chomp!
+      soundFx.playBiteChomp(1);
+    }
+  };
 
   // Coordinates for food movement in 320x370 viewBox:
   // Mouth center is at (160, 140)
@@ -158,7 +201,11 @@ export const EatingVinayaka: React.FC<EatingVinayakaProps> = ({ onEat, className
       )}
 
       {/* Main Full-Body Baal Ganesha SVG Canvas */}
-      <div className="relative">
+      <div
+        className="relative cursor-pointer group"
+        onClick={handleManualFeed}
+        title="Tap Ganesha to feed him sweets & hear him munch!"
+      >
         {/* Divine Aura Glow behind Full-Body Ganesha */}
         <div
           className={`absolute inset-0 rounded-full transition-all duration-700 pointer-events-none ${
@@ -170,7 +217,7 @@ export const EatingVinayaka: React.FC<EatingVinayakaProps> = ({ onEat, className
 
         <svg
           viewBox="0 0 320 375"
-          className="w-64 h-72 sm:w-72 sm:h-80 md:w-80 md:h-88 drop-shadow-md relative z-10 transition-transform duration-300"
+          className="w-64 h-72 sm:w-72 sm:h-80 md:w-80 md:h-88 drop-shadow-md relative z-10 transition-transform duration-300 group-hover:scale-[1.02] group-active:scale-95"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -1138,7 +1185,7 @@ export const EatingVinayaka: React.FC<EatingVinayakaProps> = ({ onEat, className
       </div>
 
       {/* Auspicious Naivedyam Caption & Action Indicator */}
-      <div className="mt-2 flex items-center justify-center gap-2 px-4 py-1 rounded-full bg-amber-100/90 border border-amber-300/80 text-xs font-black text-amber-950 shadow-2xs">
+      <div className="mt-1 flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-amber-100/90 border border-amber-300/80 text-[11px] sm:text-xs font-black text-amber-950 shadow-2xs">
         <span className="text-sm select-none" role="img" aria-label="sacred diya">🪔</span>
         <span>
           {stage === 'reaching'
@@ -1152,6 +1199,21 @@ export const EatingVinayaka: React.FC<EatingVinayakaProps> = ({ onEat, className
             : 'Lord Vinayaka enjoying sacred Naivedyam ✨'}
         </span>
       </div>
+
+      {/* Interactive Tap-To-Feed Button */}
+      <button
+        type="button"
+        id="feed-ganesha-btn"
+        onClick={handleManualFeed}
+        className="mt-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 active:scale-95 text-white text-xs font-black tracking-wide shadow-md border border-amber-300/90 flex items-center gap-2 cursor-pointer transition-all hover:shadow-lg"
+        title="Tap to feed Modak to Ganesha and hear him munch!"
+      >
+        <span className="text-sm">🥟</span>
+        <span>Tap to Feed Modak!</span>
+        <span className="bg-amber-950/20 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 text-amber-100">
+          <span>🔊</span> Munch Sound
+        </span>
+      </button>
 
       {/* Custom Keyframe Animations */}
       <style>{`

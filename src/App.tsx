@@ -143,6 +143,7 @@ export default function App() {
       isHighlightSwap: idx === swappedPair[0] || idx === swappedPair[1],
     }));
     setTiles(highlightedTiles);
+    soundFx.playSwapSwoosh();
 
     // End Mushak movement after brief duration and begin guessing phase
     addTimer(() => {
@@ -218,11 +219,13 @@ export default function App() {
         soundFx.playRoundClear();
 
         if (round >= 3) {
-          // Completed all 3 levels! Celebrate victory
+          // Completed all 3 levels! Celebrate grand victory
           addTimer(() => {
+            soundFx.playGrandVictory();
             setPhase('game_won');
           }, 1200);
         } else {
+          soundFx.playRoundClear();
           // Advance to next level (Level 2 or 3)
           addTimer(() => {
             startRound(round + 1);
@@ -263,11 +266,14 @@ export default function App() {
 
   // Start / Restart / Play Again
   const handleInitiateStart = () => {
-    soundFx.playChime();
+    soundFx.unlockAudio();
+    soundFx.playStartGame();
     setShowFestiveWish(true);
   };
 
   const handleProceedFromWish = () => {
+    soundFx.unlockAudio();
+    soundFx.playStartGame();
     setShowFestiveWish(false);
     setScore(0);
     setLives(3);
@@ -276,7 +282,8 @@ export default function App() {
 
   const handleRestart = () => {
     clearAllTimers();
-    soundFx.playChime();
+    soundFx.unlockAudio();
+    soundFx.playStartGame();
     setScore(0);
     setLives(3);
     startRound(1);
@@ -284,7 +291,8 @@ export default function App() {
 
   const handleReturnHome = () => {
     clearAllTimers();
-    soundFx.playChime();
+    soundFx.unlockAudio();
+    soundFx.playButtonClick();
     setScore(0);
     setLives(3);
     setPhase('idle');
