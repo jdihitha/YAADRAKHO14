@@ -110,13 +110,58 @@ class AudioManager {
     }
   }
 
-  // ================= 1. GANESHA EATING SOUNDS (ORGANIC, DELICIOUS & ADORABLE) =================
+  /**
+   * Helper: Generate textured, crispy crunch crackles (bold "cook/crunch" texture)
+   */
+  private playCrunchCrackles(startTime: number, count: number = 3, baseFreq: number = 2400, volume: number = 0.55) {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    try {
+      for (let c = 0; c < count; c++) {
+        const offset = startTime + c * 0.022 + Math.random() * 0.006;
+        const dur = 0.045 + Math.random() * 0.025;
+        const bufferSize = Math.max(128, Math.floor(ctx.sampleRate * dur));
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        // High-energy textured grain with natural decay
+        for (let i = 0; i < bufferSize; i++) {
+          const env = 1 - (i / bufferSize);
+          data[i] = (Math.random() * 2 - 1) * Math.pow(env, 1.4);
+        }
+
+        const src = ctx.createBufferSource();
+        src.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(baseFreq + (c * 300) + (Math.random() * 200 - 100), offset);
+        filter.Q.value = 2.4;
+
+        const gain = ctx.createGain();
+        const v = volume * (1 - c * 0.12);
+        gain.gain.setValueAtTime(v, offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, offset + dur);
+
+        src.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        src.start(offset);
+        src.stop(offset + dur);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // ================= 1. GANESHA EATING SOUNDS (ORGANIC, DELICIOUS, BOLD "COOK" CRUNCH) =================
 
   /**
    * Play specific bite munch sound:
-   * - biteNum 1: Crispy, savory first bite into golden sweet modak ("CHOMP!")
-   * - biteNum 2: Delicious, chewy mastication ("NOM-NOM!")
-   * - biteNum 3: Sweet final gulp into tummy ("GULP/NOM!")
+   * - biteNum 1: Bold, crunchy first bite ("COOK / CRUNCH-CHOMP!")
+   * - biteNum 2: Hearty, textured double mastication ("KRUK-KRUK / MUNCH-MUNCH!")
+   * - biteNum 3: Deep, satisfying sweet gulp into tummy ("GULP / KHUK!")
    */
   public playBiteChomp(biteNum: 1 | 2 | 3 = 1) {
     if (this.isMuted) return;
@@ -127,77 +172,81 @@ class AudioManager {
       const t = ctx.currentTime;
 
       if (biteNum === 1) {
-        // --- BITE 1: Crisp Sweet Modak Chomp ---
-        // 1. Crisp crumb crunch (bandpassed noise)
-        this.playNoiseBurst(t, 0.045, 2200, 0.18, 'bandpass');
+        // --- BITE 1: Bold "COOK" Crunchy Chomp into Golden Modak ---
+        // 1. Triple-burst crisp shell crackles (bold "krr-ch / cook" texture)
+        this.playCrunchCrackles(t, 3, 2600, 0.52);
 
-        // 2. Warm mouth chomp body (sine downward transient)
+        // 2. Heavy jaw thump (firm, bold bite impact)
+        const jawOsc = ctx.createOscillator();
+        const jawGain = ctx.createGain();
+        jawOsc.type = 'triangle';
+        jawOsc.frequency.setValueAtTime(260, t);
+        jawOsc.frequency.exponentialRampToValueAtTime(65, t + 0.08);
+
+        jawGain.gain.setValueAtTime(0.48, t);
+        jawGain.gain.exponentialRampToValueAtTime(0.001, t + 0.095);
+
+        jawOsc.connect(jawGain);
+        jawGain.connect(ctx.destination);
+        jawOsc.start(t);
+        jawOsc.stop(t + 0.1);
+
+        // 3. Resonant mouth cavity closing formant ("khuk / chomp")
         const mouthOsc = ctx.createOscillator();
         const mouthGain = ctx.createGain();
         mouthOsc.type = 'sine';
-        mouthOsc.frequency.setValueAtTime(220, t);
-        mouthOsc.frequency.exponentialRampToValueAtTime(80, t + 0.07);
+        mouthOsc.frequency.setValueAtTime(380, t);
+        mouthOsc.frequency.exponentialRampToValueAtTime(140, t + 0.07);
 
-        mouthGain.gain.setValueAtTime(0.22, t);
-        mouthGain.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+        mouthGain.gain.setValueAtTime(0.35, t);
+        mouthGain.gain.exponentialRampToValueAtTime(0.001, t + 0.075);
 
         mouthOsc.connect(mouthGain);
         mouthGain.connect(ctx.destination);
         mouthOsc.start(t);
-        mouthOsc.stop(t + 0.085);
-
-        // 3. Playful lip pop (formant resonance)
-        const popOsc = ctx.createOscillator();
-        const popGain = ctx.createGain();
-        popOsc.type = 'triangle';
-        popOsc.frequency.setValueAtTime(420, t);
-        popOsc.frequency.exponentialRampToValueAtTime(220, t + 0.035);
-
-        popGain.gain.setValueAtTime(0.12, t);
-        popGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-
-        popOsc.connect(popGain);
-        popGain.connect(ctx.destination);
-        popOsc.start(t);
-        popOsc.stop(t + 0.045);
+        mouthOsc.stop(t + 0.08);
       } else if (biteNum === 2) {
-        // --- BITE 2: Yummy Chewy Double-Munch ("Nom-Nom!") ---
-        const munches = [0, 0.08];
+        // --- BITE 2: Bold Double-Munch / Chew ("KRUK-KRUK / NOM-NOM!") ---
+        const munches = [0, 0.1];
         munches.forEach((dt, idx) => {
-          this.playNoiseBurst(t + dt, 0.035, 1800 + idx * 200, 0.14, 'bandpass');
+          // Crunchy crackle on each munch
+          this.playCrunchCrackles(t + dt, 2, 2200 + idx * 300, 0.45);
 
+          // Bold jaw chew body
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(180 + idx * 30, t + dt);
-          osc.frequency.exponentialRampToValueAtTime(95, t + dt + 0.055);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(230 + idx * 30, t + dt);
+          osc.frequency.exponentialRampToValueAtTime(75, t + dt + 0.07);
 
-          gain.gain.setValueAtTime(0.18, t + dt);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.06);
+          gain.gain.setValueAtTime(0.42, t + dt);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + dt + 0.075);
 
           osc.connect(gain);
           gain.connect(ctx.destination);
           osc.start(t + dt);
-          osc.stop(t + dt + 0.065);
+          osc.stop(t + dt + 0.08);
         });
       } else {
-        // --- BITE 3: Satisfying Sweet Gulp / Ingestion ---
-        this.playNoiseBurst(t, 0.03, 1600, 0.12, 'bandpass');
+        // --- BITE 3: Deep Satisfying Gulp & Mouth Smack ("GULP / KHUK!") ---
+        // Crisp lip smack
+        this.playCrunchCrackles(t, 2, 1900, 0.38);
 
+        // Deep resonant throat gulp
         const gulpOsc = ctx.createOscillator();
         const gulpGain = ctx.createGain();
         gulpOsc.type = 'sine';
-        gulpOsc.frequency.setValueAtTime(190, t);
-        gulpOsc.frequency.exponentialRampToValueAtTime(110, t + 0.05);
-        gulpOsc.frequency.linearRampToValueAtTime(140, t + 0.09);
+        gulpOsc.frequency.setValueAtTime(240, t);
+        gulpOsc.frequency.exponentialRampToValueAtTime(95, t + 0.06);
+        gulpOsc.frequency.linearRampToValueAtTime(130, t + 0.11);
 
-        gulpGain.gain.setValueAtTime(0.24, t);
-        gulpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+        gulpGain.gain.setValueAtTime(0.50, t);
+        gulpGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
 
         gulpOsc.connect(gulpGain);
         gulpGain.connect(ctx.destination);
         gulpOsc.start(t);
-        gulpOsc.stop(t + 0.11);
+        gulpOsc.stop(t + 0.13);
       }
     } catch {
       // ignore
