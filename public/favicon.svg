@@ -1,35 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor="#B45309" />
-      <stop offset="100%" stopColor="#78350F" />
+    <linearGradient id="mukutGold" x1="20" y1="4" x2="44" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FEF08A" />
+      <stop offset="50%" stopColor="#FDE047" />
+      <stop offset="100%" stopColor="#F59E0B" />
     </linearGradient>
-    <linearGradient id="trunkGrad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stopColor="#FDE047" />
-      <stop offset="50%" stopColor="#F59E0B" />
-      <stop offset="100%" stopColor="#EA580C" />
+    <linearGradient id="faceSaffron" x1="20" y1="20" x2="44" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FED7AA" />
+      <stop offset="70%" stopColor="#FDBA74" />
+      <stop offset="100%" stopColor="#FB923C" />
+    </linearGradient>
+    <linearGradient id="trunkGold" x1="28" y1="36" x2="48" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FEF08A" />
+      <stop offset="50%" stopColor="#FDE047" />
+      <stop offset="100%" stopColor="#F59E0B" />
     </linearGradient>
   </defs>
-  <!-- Background Badge for universal dark/light browser tab contrast -->
-  <circle cx="32" cy="32" r="30" fill="url(#bgGrad)" stroke="#FBBF24" strokeWidth="2.5" />
-  <circle cx="32" cy="32" r="26" stroke="#FEF08A" strokeWidth="1" strokeDasharray="3 2" opacity="0.75" />
-  
-  <!-- Sacred Mukut (Crown) -->
-  <path d="M26 19L32 9L38 19H26Z" fill="#FDE047" stroke="#92400E" strokeWidth="1.2" />
-  <circle cx="32" cy="13" r="1.5" fill="#DC2626" />
 
-  <!-- Sacred Tilak -->
-  <path d="M26 22C30 24 34 24 38 22" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" />
-  <circle cx="32" cy="20" r="1.2" fill="#FDE047" />
+  <!-- Divine Warm Subtle Aura Glow (Transparent) -->
+  <circle cx="32" cy="34" r="28" fill="#FEF08A" fill-opacity="0.3" />
 
-  <!-- Ganesha Vakratunda Trunk Form -->
-  <path d="M27 24C27 24 23 30 23 37C23 44 28 48 33 48C37 48 40 45 40 42C40 39 37 38 34 40C32 41 31 43 32 44"
-        stroke="url(#trunkGrad)" strokeWidth="4.2" strokeLinecap="round" />
-  
-  <!-- Sacred Ekadanta Tusk -->
-  <path d="M25 34L20 35" stroke="#FFFBEB" strokeWidth="2.5" strokeLinecap="round" />
-  
-  <!-- Sweet Golden Modak in Trunk -->
-  <circle cx="43" cy="40" r="3.8" fill="#FDE047" stroke="#B45309" strokeWidth="1" />
-  <circle cx="43" cy="38" r="1" fill="#DC2626" />
+  <!-- Cute Big Elephant Ears -->
+  <!-- Left Ear -->
+  <ellipse cx="14" cy="34" rx="10.5" ry="12.5" fill="url(#faceSaffron)" stroke="#C2410C" stroke-width="2" transform="rotate(-8 14 34)" />
+  <ellipse cx="14" cy="34" rx="6" ry="8" fill="#FDA4AF" transform="rotate(-8 14 34)" />
+
+  <!-- Right Ear -->
+  <ellipse cx="50" cy="34" rx="10.5" ry="12.5" fill="url(#faceSaffron)" stroke="#C2410C" stroke-width="2" transform="rotate(8 50 34)" />
+  <ellipse cx="50" cy="34" rx="6" ry="8" fill="#FDA4AF" transform="rotate(8 50 34)" />
+
+  <!-- Sacred Saffron Face -->
+  <ellipse cx="32" cy="36" rx="16.5" ry="15.5" fill="url(#faceSaffron)" stroke="#C2410C" stroke-width="2" />
+
+  <!-- Royal Golden Mukut (Crown) -->
+  <path d="M20 22 L32 4 L44 22 Z" fill="url(#mukutGold)" stroke="#B45309" stroke-width="2" stroke-linejoin="round" />
+  <rect x="19" y="19" width="26" height="4.5" rx="2" fill="#F59E0B" stroke="#B45309" stroke-width="1.5" />
+  <!-- Auspicious Ruby Crown Jewel -->
+  <circle cx="32" cy="11" r="2.8" fill="#DC2626" />
+  <circle cx="32" cy="10.2" r="1" fill="#FEF08A" />
+
+  <!-- Auspicious Red Tilak (Forehead) -->
+  <path d="M25 26 C28 29 36 29 39 26" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round" />
+  <circle cx="32" cy="24" r="1.8" fill="#DC2626" />
+  <circle cx="32" cy="28" r="1.2" fill="#FEF08A" />
+
+  <!-- Sweet Devotional Eyes -->
+  <ellipse cx="25.5" cy="33.5" rx="1.8" ry="2.2" fill="#78350F" />
+  <circle cx="25" cy="32.8" r="0.7" fill="#FFFFFF" />
+  <ellipse cx="38.5" cy="33.5" rx="1.8" ry="2.2" fill="#78350F" />
+  <circle cx="38" cy="32.8" r="0.7" fill="#FFFFFF" />
+
+  <!-- Sacred Ivory Ekadanta Tusk -->
+  <path d="M23 41.5 L17 42.5" stroke="#FFFBEB" stroke-width="3" stroke-linecap="round" />
+  <path d="M23 41.5 L17 42.5" stroke="#C2410C" stroke-width="1" stroke-linecap="round" />
+
+  <!-- Auspicious Curved Trunk (Vakratunda) in Golden Yellow -->
+  <path d="M32 37 C32 46 29 53 35 54 C39 55 43 52 43 47 C43 43 39 42 37 45 C36 47 38 49 40 49"
+        fill="none" stroke="url(#trunkGold)" stroke-width="4.8" stroke-linecap="round" />
+
+  <!-- Sacred Golden Modak at Trunk -->
+  <circle cx="48" cy="45" r="5" fill="#FBBF24" stroke="#B45309" stroke-width="1.5" />
+  <circle cx="48" cy="43.5" r="1.5" fill="#DC2626" />
 </svg>
