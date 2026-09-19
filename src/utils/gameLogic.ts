@@ -28,128 +28,60 @@ export function shuffle<T>(array: T[]): T[] {
   return arr;
 }
 
+export const TOTAL_LEVELS = 3;
+
 /**
- * Get active symbol pool for a specific round.
- * Gradually introduces new festival cards as difficulty increases:
- * - Round 1-2: 8 cards pool (Modak, Diya, Flower, Durva, Laddu, Kalash, Dhol, Coconut)
- * - Round 3-4: 10 cards pool (+ Lotus, Mushak)
- * - Round 5-6: 12 cards pool (+ Ganesha Symbol, Festival Lamp)
- * - Round 7+: All 14 cards pool (+ Pomegranate, Mango)
+ * Configuration for the 3 game levels:
+ * - Level 1: 6 cards on the board, ask any 2
+ * - Level 2: 7 cards on the board, ask 2
+ * - Level 3: 8 cards on the board, ask 3
  */
-export function getActiveSymbolPool(round: number): SymbolType[] {
-  if (round <= 2) {
-    return ['modak', 'diya', 'flower', 'durva', 'laddu', 'kalash', 'dhol', 'coconut'];
-  } else if (round <= 4) {
-    return [
-      'modak',
-      'diya',
-      'flower',
-      'durva',
-      'laddu',
-      'kalash',
-      'dhol',
-      'coconut',
-      'lotus',
-      'mushak',
-    ];
-  } else if (round <= 6) {
-    return [
-      'modak',
-      'diya',
-      'flower',
-      'durva',
-      'laddu',
-      'kalash',
-      'dhol',
-      'coconut',
-      'lotus',
-      'mushak',
-      'ganesh',
-      'lamp',
-    ];
+export function getRoundConfig(level: number): RoundConfig {
+  if (level === 1) {
+    return {
+      level: 1,
+      tileCount: 6,
+      askCount: 2,
+      revealDurationMs: 2700,
+      swapCount: 1,
+      targetSymbols: [],
+    };
+  } else if (level === 2) {
+    return {
+      level: 2,
+      tileCount: 7,
+      askCount: 2,
+      revealDurationMs: 2500,
+      swapCount: 1,
+      targetSymbols: [],
+    };
   } else {
-    // Round 7+: full 14 cards
-    return ALL_SYMBOLS;
+    // Level 3
+    return {
+      level: 3,
+      tileCount: 8,
+      askCount: 3,
+      revealDurationMs: 2400,
+      swapCount: 1,
+      targetSymbols: [],
+    };
   }
 }
 
-export function getRoundConfig(round: number): RoundConfig {
-  // Tile count progression requested:
-  // Starts with 8 cards, then increases: 8 → 10 → 12 → 14 → 16
-  // Round 1-2: 8 tiles
-  // Round 3-4: 10 tiles
-  // Round 5-6: 12 tiles
-  // Round 7-8: 14 tiles
-  // Round 9+: 16 tiles
-  let tileCount = 8;
-  if (round >= 9) {
-    tileCount = 16;
-  } else if (round >= 7) {
-    tileCount = 14;
-  } else if (round >= 5) {
-    tileCount = 12;
-  } else if (round >= 3) {
-    tileCount = 10;
-  }
-
-  // Reveal duration (in ms):
-  // Round 1: 2200ms
-  // Round 2: 2000ms
-  // Round 3: 1850ms
-  // Round 4: 1700ms
-  // Round 5: 1550ms
-  // Round 6: 1400ms
-  // Round 7+: 1200ms down to min 950ms
-  const revealDurationMs = Math.max(950, 2350 - round * 150);
-
-  // Swaps by Mushak:
-  // Rounds 1-3: 1 swap
-  // Rounds 4+: 1 or 2 swaps
-  const swapCount = round >= 4 ? (round % 2 === 0 ? 2 : 1) : 1;
-
-  return {
-    round,
-    tileCount,
-    revealDurationMs,
-    swapCount,
-    targetSymbols: [], // Generated dynamically
-  };
-}
-
-export function generateRoundTiles(round: number): {
+export function generateRoundTiles(level: number): {
   tiles: TileItem[];
   targets: SymbolType[];
 } {
-  const config = getRoundConfig(round);
+  const config = getRoundConfig(level);
   const count = config.tileCount;
-  const pool = getActiveSymbolPool(round);
+  const askCount = config.askCount;
 
-  // Select symbols from the current round's active pool
-  let chosenSymbols: SymbolType[] = [];
-  if (count <= pool.length) {
-    const shuffledPool = shuffle(pool);
-    chosenSymbols = shuffledPool.slice(0, count);
-  } else {
-    // If board needs more tiles than unique symbols in pool, add duplicates
-    const firstSet = shuffle(pool);
-    const extraNeeded = count - pool.length;
-    const secondSet = shuffle(pool).slice(0, extraNeeded);
-    chosenSymbols = shuffle([...firstSet, ...secondSet]);
-  }
-
-  // Always make sure Modak or Diya is present in early rounds for festive flavor
-  if (round === 1) {
-    const mustHave: SymbolType[] = ['modak', 'diya'];
-    mustHave.forEach((sym, idx) => {
-      if (!chosenSymbols.includes(sym)) {
-        chosenSymbols[idx] = sym;
-      }
-    });
-    chosenSymbols = shuffle(chosenSymbols);
-  }
+  // Pick `count` distinct festive symbols from ALL_SYMBOLS (14 available)
+  const shuffledAll = shuffle(ALL_SYMBOLS);
+  const chosenSymbols = shuffledAll.slice(0, count);
 
   const tiles: TileItem[] = chosenSymbols.map((symbol, index) => ({
-    id: `tile-${round}-${index}-${symbol}-${Math.random().toString(36).substring(2, 6)}`,
+    id: `tile-lvl${level}-${index}-${symbol}-${Math.random().toString(36).substring(2, 6)}`,
     symbol,
     index,
     isRevealed: false,
@@ -158,22 +90,12 @@ export function generateRoundTiles(round: number): {
     isHighlightSwap: false,
   }));
 
-  // Targets to find:
-  // Round 1: 2 targets (Modak + Diya)
-  // Round 2-5: 2 targets
-  // Round 6+: 2 or 3 targets
-  const numTargets = round >= 6 ? (round % 3 === 0 ? 3 : 2) : 2;
-
-  // Pick distinct targets from the generated board
-  const uniqueInBoard = Array.from(new Set(chosenSymbols));
-  const shuffledBoardSymbols = shuffle(uniqueInBoard);
-
-  let targets: SymbolType[] = [];
-  if (round === 1 && uniqueInBoard.includes('modak') && uniqueInBoard.includes('diya')) {
-    targets = ['modak', 'diya'];
-  } else {
-    targets = shuffledBoardSymbols.slice(0, Math.min(numTargets, uniqueInBoard.length));
-  }
+  // Select target symbols:
+  // Level 1: ask any 2
+  // Level 2: ask 2
+  // Level 3: ask 3
+  const shuffledBoard = shuffle(chosenSymbols);
+  const targets = shuffledBoard.slice(0, askCount);
 
   return { tiles, targets };
 }

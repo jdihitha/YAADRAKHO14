@@ -250,6 +250,84 @@ class AudioManager {
       // ignore
     }
   }
+
+  // Vinayaka eating Modak & Undrallu sound effect (crisp festive munching & joyful chime)
+  public playEatingSound() {
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const ctx = this.ctx;
+      const t = ctx.currentTime;
+
+      // Munch / Crunch Bite 1 & 2
+      const biteTimes = [0, 0.14, 0.28];
+      biteTimes.forEach((biteTime, idx) => {
+        // Crunch pitch transient
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = idx % 2 === 0 ? 'triangle' : 'square';
+        const startFreq = 380 - idx * 30;
+        const endFreq = 160 - idx * 20;
+
+        osc.frequency.setValueAtTime(startFreq, t + biteTime);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(60, endFreq), t + biteTime + 0.08);
+
+        gain.gain.setValueAtTime(0.01, t + biteTime);
+        gain.gain.linearRampToValueAtTime(0.18, t + biteTime + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + biteTime + 0.09);
+
+        // White noise-like crunch buffer for texture
+        const bufferSize = Math.floor(ctx.sampleRate * 0.04);
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+
+        const whiteNoise = ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1200 + idx * 200;
+        filter.Q.value = 2;
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.15, t + biteTime);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, t + biteTime + 0.04);
+
+        whiteNoise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+
+        whiteNoise.start(t + biteTime);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t + biteTime);
+        osc.stop(t + biteTime + 0.1);
+      });
+
+      // Joyful sweet divine chime after eating (satisfaction ding)
+      const chimeOsc = ctx.createOscillator();
+      const chimeGain = ctx.createGain();
+      chimeOsc.type = 'sine';
+      chimeOsc.frequency.setValueAtTime(880, t + 0.36); // A5
+      chimeOsc.frequency.exponentialRampToValueAtTime(1318.51, t + 0.44); // E6
+
+      chimeGain.gain.setValueAtTime(0.001, t + 0.36);
+      chimeGain.gain.linearRampToValueAtTime(0.14, t + 0.39);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, t + 0.72);
+
+      chimeOsc.connect(chimeGain);
+      chimeGain.connect(ctx.destination);
+      chimeOsc.start(t + 0.36);
+      chimeOsc.stop(t + 0.75);
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export const soundFx = new AudioManager();

@@ -33,17 +33,19 @@ export interface TileItem {
 
 export type GamePhase =
   | 'idle'           // Before start
-  | 'memorize'       // Tiles are revealed (2s -> 1s)
+  | 'memorize'       // Tiles are revealed
   | 'covering'       // Tiles flip back to hidden
   | 'mushak_moving'  // Mushak sneaks in and swaps tile positions
   | 'guessing'       // Player clicks tiles to match target
-  | 'round_success'  // Round solved, streak bonus & celebration
+  | 'round_success'  // Level solved, streak bonus & celebration
+  | 'game_won'       // All 3 levels completed!
   | 'game_over';     // Lives = 0
 
 export interface RoundConfig {
-  round: number;
+  level: number;
   tileCount: number;
+  askCount: number;
   revealDurationMs: number;
-  swapCount: number; // 1 or 2
+  swapCount: number;
   targetSymbols: SymbolType[];
 }

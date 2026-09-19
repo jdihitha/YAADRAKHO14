@@ -21,34 +21,36 @@ export const TileGrid: React.FC<TileGridProps> = ({
 }) => {
   const count = tiles.length;
 
-  // Responsive grid column configurations for 8, 10, 12, 14, 16 tiles
-  let gridColsClass = 'grid-cols-4';
-  let sizeClass = 'h-24 sm:h-28 md:h-30';
-  let gapClass = 'gap-2 sm:gap-3';
+  // Custom responsive layout styling for 6, 7, and 8 cards
+  let itemWidthClass = 'w-[22%] min-w-[68px] max-w-[112px]';
+  let sizeClass = 'h-24 sm:h-28 md:h-32';
+  let gapClass = 'gap-2.5 sm:gap-3.5';
+  let containerMaxWidth = 'max-w-md sm:max-w-lg';
 
-  if (count === 8) {
-    gridColsClass = 'grid-cols-4';
-    sizeClass = 'h-22 sm:h-28 md:h-30';
-  } else if (count === 10) {
-    gridColsClass = 'grid-cols-5';
-    sizeClass = 'h-20 sm:h-24 md:h-28';
-  } else if (count === 12) {
-    gridColsClass = 'grid-cols-4';
-    sizeClass = 'h-18 sm:h-22 md:h-24';
-  } else if (count === 14) {
-    gridColsClass = 'grid-cols-4 sm:grid-cols-5 md:grid-cols-7';
-    sizeClass = 'h-16 sm:h-20 md:h-22';
-    gapClass = 'gap-1.5 sm:gap-2.5';
-  } else if (count >= 16) {
-    gridColsClass = 'grid-cols-4 sm:grid-cols-4 md:grid-cols-8';
-    sizeClass = 'h-16 sm:h-18 md:h-20';
-    gapClass = 'gap-1.5 sm:gap-2';
+  if (count === 6) {
+    // Level 1: 6 cards in 2 rows of 3, centered
+    itemWidthClass = 'w-[30%] min-w-[85px] max-w-[135px]';
+    sizeClass = 'h-28 sm:h-32 md:h-36';
+    gapClass = 'gap-3 sm:gap-4';
+    containerMaxWidth = 'max-w-sm sm:max-w-md';
+  } else if (count === 7) {
+    // Level 2: 7 cards (4 on top row, 3 centered on bottom row)
+    itemWidthClass = 'w-[22%] min-w-[68px] max-w-[112px]';
+    sizeClass = 'h-24 sm:h-28 md:h-32';
+    gapClass = 'gap-2 sm:gap-3';
+    containerMaxWidth = 'max-w-md sm:max-w-lg';
+  } else if (count === 8) {
+    // Level 3: 8 cards (4 on top row, 4 on bottom row)
+    itemWidthClass = 'w-[22%] min-w-[68px] max-w-[112px]';
+    sizeClass = 'h-24 sm:h-28 md:h-32';
+    gapClass = 'gap-2 sm:gap-3';
+    containerMaxWidth = 'max-w-md sm:max-w-lg';
   }
 
   const canClick = phase === 'guessing';
 
   return (
-    <div className="relative w-full max-w-xl sm:max-w-2xl mx-auto px-3 sm:px-4 py-2 flex flex-col items-center justify-center flex-1">
+    <div className={`relative w-full ${containerMaxWidth} mx-auto px-3 sm:px-4 py-2 flex flex-col items-center justify-center flex-1`}>
       {/* Mushak Scurry Alert Banner when active */}
       <AnimatePresence>
         {mushakActive && (
@@ -68,10 +70,10 @@ export const TileGrid: React.FC<TileGridProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Grid container with motion layout */}
+      {/* Symmetric flex-wrap container with motion layout */}
       <div
         id="tile-grid-board"
-        className={`grid ${gridColsClass} ${gapClass} w-full my-auto transition-all justify-center`}
+        className={`flex flex-wrap justify-center ${gapClass} w-full my-auto transition-all`}
       >
         {tiles.map((tile, idx) => (
           <motion.div
@@ -82,7 +84,7 @@ export const TileGrid: React.FC<TileGridProps> = ({
               stiffness: 280,
               damping: 24,
             }}
-            className="relative flex items-center justify-center w-full"
+            className={`relative flex items-center justify-center ${itemWidthClass}`}
           >
             <TileCard
               tile={tile}

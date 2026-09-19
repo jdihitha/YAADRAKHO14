@@ -13,8 +13,9 @@ import { TargetBanner } from './components/TargetBanner';
 import { StartScreen } from './components/StartScreen';
 import { GameOverModal } from './components/GameOverModal';
 import { FestiveWishModal } from './components/FestiveWishModal';
+import { FestiveBackground } from './components/FestiveBackground';
 
-const BEST_SCORE_KEY = 'judam_best_score';
+const BEST_SCORE_KEY = 'yaadrakho_best_score';
 
 export default function App() {
   const [phase, setPhase] = useState<GamePhase>('idle');
@@ -22,7 +23,10 @@ export default function App() {
   const [score, setScore] = useState<number>(0);
   const [lives, setLives] = useState<number>(3);
   const [bestScore, setBestScore] = useState<number>(() => {
-    const saved = localStorage.getItem(BEST_SCORE_KEY) || localStorage.getItem('modak_memory_best_score');
+    const saved =
+      localStorage.getItem(BEST_SCORE_KEY) ||
+      localStorage.getItem('judam_best_score') ||
+      localStorage.getItem('modak_memory_best_score');
     return saved ? parseInt(saved, 10) || 0 : 0;
   });
   const [isMuted, setIsMuted] = useState<boolean>(() => soundFx.getMuted());
@@ -178,40 +182,52 @@ export default function App() {
       );
 
       // Base score addition
-      const hitPoints = 150 + round * 25;
+      const hitPoints = 150 + round * 50;
       const newScore = score + hitPoints;
       setScore(newScore);
       checkAndUpdateBestScore(newScore);
 
-      // Check if ALL targets in the round are found!
+      // Check if ALL targets in the level are found!
       if (nextSolved.length === targets.length) {
-        // ROUND COMPLETE!
+        // LEVEL COMPLETE!
         setPhase('round_success');
 
         // Speed bonus calculation
         const elapsedSec = (Date.now() - guessingStartTimeRef.current) / 1000;
         let speedBonus = 0;
-        if (elapsedSec < 3.0) {
+        if (elapsedSec < 3.5) {
           speedBonus = 100;
-        } else if (elapsedSec < 5.0) {
+        } else if (elapsedSec < 5.5) {
           speedBonus = 50;
         }
 
-        const finalRoundScore = newScore + 100 + speedBonus;
+        const finalRoundScore = newScore + 150 + speedBonus;
         setScore(finalRoundScore);
         checkAndUpdateBestScore(finalRoundScore);
 
         // Visual feedback banner
-        const bonusMsg = speedBonus > 0 ? `+${100 + speedBonus} Speed Bonus!` : '+100 Round Clear!';
+        const bonusMsg =
+          round >= 3
+            ? '🏆 All 3 Levels Completed!'
+            : speedBonus > 0
+            ? `+${150 + speedBonus} Speed Bonus!`
+            : `+150 Level ${round} Clear!`;
         setFloatingBonus({ text: bonusMsg, id: Date.now() });
-        setTimeout(() => setFloatingBonus(null), 1200);
+        setTimeout(() => setFloatingBonus(null), 1300);
 
         soundFx.playRoundClear();
 
-        // Advance to next round after celebration pause
-        addTimer(() => {
-          startRound(round + 1);
-        }, 1200);
+        if (round >= 3) {
+          // Completed all 3 levels! Celebrate victory
+          addTimer(() => {
+            setPhase('game_won');
+          }, 1200);
+        } else {
+          // Advance to next level (Level 2 or 3)
+          addTimer(() => {
+            startRound(round + 1);
+          }, 1200);
+        }
       }
     } else {
       // WRONG SELECTION!
@@ -281,18 +297,17 @@ export default function App() {
 
   return (
     <main
-      className="min-h-screen w-full flex flex-col justify-between bg-[#FFFDF7] text-[#4A1504] relative overflow-hidden"
-      id="judam-game-app"
+      className="min-h-screen w-full flex flex-col justify-between text-[#4A1504] relative overflow-hidden"
+      id="yaadrakho-game-app"
     >
-      {/* Subtle warm corner accents */}
-      <div className="absolute -top-16 -left-16 w-56 h-56 rounded-full border-[10px] border-amber-200/30 pointer-events-none" />
-      <div className="absolute -bottom-20 -right-20 w-64 h-64 rounded-full border-[12px] border-orange-200/25 pointer-events-none" />
+      {/* Cool Atmospheric Festive Temple Background with Sacred Rangoli & Golden Glow */}
+      <FestiveBackground />
 
       {/* Floating score bonus feedback */}
       {floatingBonus && (
         <div
           key={floatingBonus.id}
-          className="fixed top-24 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-full bg-emerald-600 text-white font-black text-sm shadow-lg animate-bounce pointer-events-none"
+          className="fixed top-24 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 rounded-full bg-emerald-600 text-white font-black text-sm shadow-xl animate-bounce pointer-events-none border border-emerald-300"
         >
           {floatingBonus.text}
         </div>
@@ -303,9 +318,14 @@ export default function App() {
         <FestiveWishModal onProceed={handleProceedFromWish} />
       )}
 
-      {/* When in idle phase: clean, cute, cool Start Screen */}
+      {/* When in idle phase: clean, cute, cool Start Screen with Banana Trees & Eating Vinayaka */}
       {phase === 'idle' ? (
-        <StartScreen onStart={handleInitiateStart} bestScore={bestScore} />
+        <StartScreen
+          onStart={handleInitiateStart}
+          bestScore={bestScore}
+          isMuted={isMuted}
+          onToggleMute={handleToggleMute}
+        />
       ) : (
         <>
           {/* Top: Score | ❤️ Lives | Round */}
@@ -338,12 +358,26 @@ export default function App() {
         </>
       )}
 
-      {/* Game Over Modal */}
+      {/* Game Over Modal (Lives lost) */}
       {phase === 'game_over' && (
         <GameOverModal
           score={score}
           bestScore={bestScore}
           round={round}
+          isVictory={false}
+          onPlayAgain={handleRestart}
+          onRestart={handleRestart}
+          onHome={handleReturnHome}
+        />
+      )}
+
+      {/* Game Won Modal (All 3 levels completed!) */}
+      {phase === 'game_won' && (
+        <GameOverModal
+          score={score}
+          bestScore={bestScore}
+          round={round}
+          isVictory={true}
           onPlayAgain={handleRestart}
           onRestart={handleRestart}
           onHome={handleReturnHome}
