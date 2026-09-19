@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#B45309" />
+      <stop offset="100%" stopColor="#78350F" />
+    </linearGradient>
+    <linearGradient id="trunkGrad" x1="16" y1="12" x2="48" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FDE047" />
+      <stop offset="50%" stopColor="#F59E0B" />
+      <stop offset="100%" stopColor="#EA580C" />
+    </linearGradient>
+  </defs>
+  <!-- Background Badge for universal dark/light browser tab contrast -->
+  <circle cx="32" cy="32" r="30" fill="url(#bgGrad)" stroke="#FBBF24" strokeWidth="2.5" />
+  <circle cx="32" cy="32" r="26" stroke="#FEF08A" strokeWidth="1" strokeDasharray="3 2" opacity="0.75" />
+  
+  <!-- Sacred Mukut (Crown) -->
+  <path d="M26 19L32 9L38 19H26Z" fill="#FDE047" stroke="#92400E" strokeWidth="1.2" />
+  <circle cx="32" cy="13" r="1.5" fill="#DC2626" />
+
+  <!-- Sacred Tilak -->
+  <path d="M26 22C30 24 34 24 38 22" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" />
+  <circle cx="32" cy="20" r="1.2" fill="#FDE047" />
+
+  <!-- Ganesha Vakratunda Trunk Form -->
+  <path d="M27 24C27 24 23 30 23 37C23 44 28 48 33 48C37 48 40 45 40 42C40 39 37 38 34 40C32 41 31 43 32 44"
+        stroke="url(#trunkGrad)" strokeWidth="4.2" strokeLinecap="round" />
+  
+  <!-- Sacred Ekadanta Tusk -->
+  <path d="M25 34L20 35" stroke="#FFFBEB" strokeWidth="2.5" strokeLinecap="round" />
+  
+  <!-- Sweet Golden Modak in Trunk -->
+  <circle cx="43" cy="40" r="3.8" fill="#FDE047" stroke="#B45309" strokeWidth="1" />
+  <circle cx="43" cy="38" r="1" fill="#DC2626" />
+</svg>
