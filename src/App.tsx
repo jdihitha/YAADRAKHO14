@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { GamePhase, TileItem, SymbolType } from './types';
 import {
   generateRoundTiles,
@@ -391,6 +392,7 @@ export default function App() {
           onHome={handleReturnHome}
         />
       )}
+      <Analytics />
     </main>
   );
 }
